@@ -196,6 +196,37 @@ const deployContract = async (
     };
   }
 
+  
+  const abi = compiledContractSierra.abi;
+  const constructorAbi = abi.find((item: any) => item.type === "constructor");
+  if (constructorAbi) {
+    const requiredArgs = constructorAbi.inputs || [];
+    if (!constructorArgs) {
+      throw new Error(
+        red(
+          `Missing constructor arguments: expected ${requiredArgs.length} (${requiredArgs
+            .map((a: any) => `${a.name}: ${a.type}`)
+            .join(", ")}), but got none.`
+        )
+      );
+    }
+    for (const arg of requiredArgs) {
+      if (
+        !(arg.name in constructorArgs) ||
+        constructorArgs[arg.name] === undefined ||
+        constructorArgs[arg.name] === null ||
+        constructorArgs[arg.name] === ""
+      ) {
+        throw new Error(
+          red(
+            `Missing value for constructor argument '${arg.name}' of type '${arg.type}'.`
+          )
+        );
+      }
+    }
+  }
+  
+
   const contractCalldata = new CallData(compiledContractSierra.abi);
   const constructorCalldata = constructorArgs
     ? contractCalldata.compile("constructor", constructorArgs)
